@@ -235,8 +235,8 @@ export const Login: FC = () => {
           {errorText && <div className="error-text">{errorText}</div>}
           <b>Hint</b>: if you are looking for an authentication protected
           endpoint, try using:
-          <a href="https://brokencrystals.com/api/products">
-            https://brokencrystals.com/api/products
+          <a href="/api/products">
+            {`${window.location.origin}/api/products`}
           </a>
         </div>
         <div className="register-link">
