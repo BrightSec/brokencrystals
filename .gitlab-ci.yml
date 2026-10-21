@@ -46,7 +46,7 @@ bright-agent:
 
       # Latest release. To pin a version, replace 'latest/download' with
       # 'download/<tag>', e.g. .../releases/download/v0.1.1
-      base="https://github.com/NeuraLegion/bright-agent-dist/releases/latest/download"
+      base="https://github.com/BrightSec/bright-agent-dist/releases/latest/download"
       # Download OUTSIDE the checkout so the binary is never swept into a fix
       # commit (the agent commits with `git add -A`).
       tmp="$(mktemp -d)"
