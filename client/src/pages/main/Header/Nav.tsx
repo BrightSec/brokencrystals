@@ -56,7 +56,7 @@ const menu: Array<MenuItem> = [
   },
   {
     name: 'Vulnerabilities',
-    path: 'https://github.com/NeuraLegion/brokencrystals#vulnerabilities-overview',
+    path: 'https://github.com/BrightSec/brokencrystals#vulnerabilities-overview',
     newTab: true
   }
 ];

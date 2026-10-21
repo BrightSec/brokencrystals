@@ -28,7 +28,7 @@ To rebuild the app and restart the containers:
 docker compose --file=compose.local.yml up -d --build --force-recreate
 ```
 
-## Running tests by [SecTester](https://github.com/NeuraLegion/sectester-js/)
+## Running tests by [SecTester](https://github.com/BrightSec/sectester-js/)
 
 In the path [`./test`](./test) you can find tests to run with Jest.
 
@@ -50,7 +50,7 @@ Finally, you can start tests with SecTester against these endpoints as follows:
 npm run test:e2e
 ```
 
-Full configuration & usage examples can be found in our [demo project](https://github.com/NeuraLegion/sectester-js-demo-broken-crystals);
+Full configuration & usage examples can be found in our [demo project](https://github.com/BrightSec/sectester-js-demo-broken-crystals);
 
 ## Vulnerabilities Overview
 
