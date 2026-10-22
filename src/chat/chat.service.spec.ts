@@ -1,5 +1,7 @@
 import { EntityManager } from '@mikro-orm/core';
 import { HttpClientService } from '../httpclient/httpclient.service';
+import { OrcaRouterAuthError } from '../orcarouter/orcarouter.errors';
+import { OrcaRouterService } from '../orcarouter/orcarouter.service';
 import { ChatMessage } from './api/ChatMessage';
 import { ChatService } from './chat.service';
 
@@ -8,6 +10,7 @@ describe('ChatService', () => {
 
   let executeMock: jest.Mock;
   let postMock: jest.Mock;
+  let orcaChatMock: jest.Mock;
   let getConnectionMock: jest.Mock;
   let em: EntityManager;
   let httpClient: HttpClientService;
@@ -16,10 +19,12 @@ describe('ChatService', () => {
   const build = () => {
     executeMock = jest.fn().mockResolvedValue([]);
     postMock = jest.fn();
+    orcaChatMock = jest.fn();
     getConnectionMock = jest.fn(() => ({ execute: executeMock }));
     em = { getConnection: getConnectionMock } as unknown as EntityManager;
     httpClient = { post: postMock } as unknown as HttpClientService;
-    return new ChatService(httpClient, em);
+    const orcaRouter = { chat: orcaChatMock } as unknown as OrcaRouterService;
+    return new ChatService(httpClient, em, orcaRouter);
   };
 
   const userMsg = (content: string): ChatMessage[] => [
@@ -151,5 +156,40 @@ describe('ChatService', () => {
     await service.onModuleInit();
 
     expect(getConnectionMock).not.toHaveBeenCalled();
+  });
+
+  it('routes an explicit OrcaRouter selection through the provider', async () => {
+    orcaChatMock.mockResolvedValueOnce('ORCA ANSWER');
+
+    const result = await service.query(userMsg('what tools do you have'), {
+      providerId: 'orcarouter-cyber',
+      model: 'orcacyber-ultra-1.0'
+    });
+
+    expect(result).toBe('ORCA ANSWER');
+    expect(orcaChatMock).toHaveBeenCalledWith(
+      userMsg('what tools do you have'),
+      'orcacyber-ultra-1.0'
+    );
+    // The mock table must not shadow an explicitly routed request.
+    expect(executeMock).not.toHaveBeenCalled();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('propagates provider auth failures instead of hiding them behind the default answer', async () => {
+    orcaChatMock.mockRejectedValueOnce(new OrcaRouterAuthError(401));
+
+    await expect(
+      service.query(userMsg('hello'), { providerId: 'orcarouter-cyber' })
+    ).rejects.toBeInstanceOf(OrcaRouterAuthError);
+  });
+
+  it('keeps the legacy path when no provider is selected', async () => {
+    executeMock.mockResolvedValueOnce([{ response: 'MOCKED RESPONSE' }]);
+
+    const result = await service.query(userMsg('what tools do you have'));
+
+    expect(result).toBe('MOCKED RESPONSE');
+    expect(orcaChatMock).not.toHaveBeenCalled();
   });
 });

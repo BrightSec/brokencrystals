@@ -28,6 +28,28 @@ To rebuild the app and restart the containers:
 docker compose --file=compose.local.yml up -d --build --force-recreate
 ```
 
+## OrcaRouter Cyber Inference provider
+
+The chat widget can route to **[OrcaRouter](https://www.orcarouter.ai) Cyber Inference**, a
+named first-class provider for security teams doing authorized, scoped work
+(red-team and blue-team use on the same endpoint). It is not a generic
+"any endpoint" passthrough: the provider has its own base URL, credential and
+model catalog.
+
+- Provider: **OrcaRouter Cyber Inference**, base URL `https://api.orcarouter.ai/v1`
+  (OpenAI-compatible; overridable with `ORCA_API_BASE_URL` or a shared `ORCA_BASE_URL`).
+- Authentication: paste an `sk-orca-…` API key in the chat provider panel, or set
+  `ORCAROUTER_API_KEY`. Keys stay server-side; the browser only ever receives a
+  masked status.
+- Models: discovered live from `GET https://api.orcarouter.ai/v1/models` and
+  filtered per capability. There is no free-text model field; if discovery is
+  unavailable a small verified fallback list is served and the UI says so.
+- Recommended cyber-tier defaults are `orcacyber-ultra-1.0` (security code
+  scanning over large repositories) and `orcacyber-zero-1.5`. They appear in the
+  catalog once the workspace is unlocked for the cyber tier; see
+  [OrcaRouter for security teams](https://www.orcarouter.ai/cyber) and the
+  [cyber model catalog](https://www.orcarouter.ai/models?tier=cyber).
+
 ## Running tests by [SecTester](https://github.com/BrightSec/sectester-js/)
 
 In the path [`./test`](./test) you can find tests to run with Jest.

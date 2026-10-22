@@ -6,6 +6,11 @@ import { LoginFormMode } from '../interfaces/User';
 import type { Product } from '../interfaces/Product';
 import type { OidcClient } from '../interfaces/Auth';
 import type { ChatMessage } from '../interfaces/ChatMessage';
+import type {
+  OrcaCatalog,
+  OrcaChatReply,
+  OrcaCredentialStatus
+} from '../interfaces/OrcaRouter';
 import { ApiUrl } from './ApiUrl';
 import { makeApiRequest } from './makeApiRequest';
 import type { HiddenUploadResponse } from '../interfaces/HiddenUploadResponse';
@@ -362,5 +367,74 @@ export function queryChat(messages: ChatMessage[]): Promise<string> {
     data: messages
   }).then((res) => {
     return typeof res === 'string' ? res : '';
+  });
+}
+
+/**
+ * OrcaRouter endpoints return actionable JSON errors (401/429/400), so they use
+ * axios directly instead of the generic helper that collapses every failure
+ * into one message. Nothing secret is ever returned by these endpoints.
+ */
+async function orcaRequest<T>(config: AxiosRequestConfig): Promise<T> {
+  try {
+    const response = await httpClient.request<T>(config);
+    return response.data;
+  } catch (error) {
+    const candidate = error as {
+      response?: { data?: { message?: unknown }; status?: number };
+    };
+    const serverMessage = candidate.response?.data?.message;
+    const status = candidate.response?.status;
+    throw new Error(
+      typeof serverMessage === 'string' && serverMessage.length > 0
+        ? serverMessage
+        : `OrcaRouter request failed${status ? ` (HTTP ${status})` : ''}`
+    );
+  }
+}
+
+export function getOrcaModels(
+  capability: string = 'chat'
+): Promise<OrcaCatalog> {
+  return orcaRequest<OrcaCatalog>({
+    url: `${ApiUrl.OrcaRouter}/models?capability=${encodeURIComponent(
+      capability
+    )}`,
+    method: 'get'
+  });
+}
+
+export function getOrcaCredentials(): Promise<OrcaCredentialStatus> {
+  return orcaRequest<OrcaCredentialStatus>({
+    url: `${ApiUrl.OrcaRouter}/credentials`,
+    method: 'get'
+  });
+}
+
+export function saveOrcaCredential(
+  apiKey: string
+): Promise<OrcaCredentialStatus> {
+  return orcaRequest<OrcaCredentialStatus>({
+    url: `${ApiUrl.OrcaRouter}/credentials`,
+    method: 'put',
+    data: { apiKey }
+  });
+}
+
+export function clearOrcaCredential(): Promise<OrcaCredentialStatus> {
+  return orcaRequest<OrcaCredentialStatus>({
+    url: `${ApiUrl.OrcaRouter}/credentials`,
+    method: 'delete'
+  });
+}
+
+export function queryOrcaChat(
+  messages: ChatMessage[],
+  model?: string
+): Promise<OrcaChatReply> {
+  return orcaRequest<OrcaChatReply>({
+    url: `${ApiUrl.OrcaRouter}/chat`,
+    method: 'post',
+    data: model ? { messages, model } : { messages }
   });
 }

@@ -1,6 +1,11 @@
 import { EntityManager } from '@mikro-orm/core';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { HttpClientService } from '../httpclient/httpclient.service';
+import {
+  ORCAROUTER_PROVIDER_ID,
+  OrcaRouterService
+} from '../orcarouter/orcarouter.service';
+import type { OrcaServiceOptions } from '../orcarouter/orcarouter.types';
 import { ChatMessage } from './api/ChatMessage';
 import { CHAT_MOCK_SEED } from './chat-mock.seed';
 
@@ -30,7 +35,9 @@ export class ChatService implements OnModuleInit {
 
   constructor(
     private readonly httpClient: HttpClientService,
-    private readonly em: EntityManager
+    private readonly em: EntityManager,
+    @Optional()
+    private readonly orcaRouter?: OrcaRouterService
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -46,8 +53,20 @@ export class ChatService implements OnModuleInit {
     return (process.env.CHAT_MOCK_ENABLED ?? 'true').toLowerCase() !== 'false';
   }
 
-  async query(messages: ChatMessage[]): Promise<string> {
+  async query(
+    messages: ChatMessage[],
+    options: OrcaServiceOptions = {}
+  ): Promise<string> {
     this.logger.debug(`Chat query: ${JSON.stringify(messages)}`);
+
+    // An explicit named-provider choice always uses that provider: the mock
+    // table exists to demo the legacy path, not to shadow a routed request.
+    if (options.providerId === ORCAROUTER_PROVIDER_ID) {
+      if (!this.orcaRouter) {
+        throw new Error('OrcaRouter provider is not configured');
+      }
+      return this.orcaRouter.chat(messages, options.model);
+    }
 
     // Search only the latest user prompt; earlier turns/answers pollute the match.
     const prompt = this.lastUserPrompt(messages);
