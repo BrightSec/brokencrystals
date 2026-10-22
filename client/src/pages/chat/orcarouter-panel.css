@@ -1,0 +1,189 @@
+.orca-panel {
+  position: relative;
+  z-index: 20;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid #cfd4d8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.orca-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.orca-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orca-field--grow {
+  flex: 1 1 360px;
+  min-width: 280px;
+}
+
+.orca-field label,
+.orca-credential__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2b2b2b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.orca-input {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #9aa3a8;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #1d1d1d;
+  font-size: 14px;
+}
+
+.orca-model {
+  position: relative;
+}
+
+.orca-model__trigger {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #9aa3a8;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #1d1d1d;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.orca-model__trigger:disabled {
+  cursor: not-allowed;
+  color: #6c757d;
+}
+
+.orca-model__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 1000;
+  width: 100%;
+  max-height: 280px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #7b858a;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+}
+
+.orca-model__option {
+  display: flex;
+  width: 100%;
+  padding: 8px 12px;
+  flex-direction: column;
+  gap: 2px;
+  border: 0;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.orca-model__option:hover,
+.orca-model__option:focus-visible {
+  background: #eef4f1;
+  outline: none;
+}
+
+.orca-model__option--selected {
+  background: #e3eee9;
+}
+
+.orca-model__id {
+  font-family: monospace;
+  font-size: 13px;
+  color: #1d1d1d;
+}
+
+.orca-model__meta {
+  font-size: 11px;
+  color: #5c676c;
+}
+
+.orca-credential {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #d5dadd;
+}
+
+.orca-credential__status {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #2b2b2b;
+}
+
+.orca-credential__status code {
+  padding: 1px 4px;
+  background: #f1f3f4;
+  border-radius: 3px;
+}
+
+.orca-credential__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.orca-credential__form .orca-input {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.orca-credential__form .au-btn {
+  min-height: 38px;
+}
+
+.orca-credential__link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #1f6f4a;
+}
+
+.orca-panel__hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #5c676c;
+}
+
+.orca-panel__error {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #a32020;
+}
+
+.orca-panel__notice {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #1f6f4a;
+}
+
+.orca-btn--secondary {
+  background: #5c676c;
+  color: #ffffff;
+}
+
+.orca-btn--secondary:hover {
+  background: #495257;
+}
