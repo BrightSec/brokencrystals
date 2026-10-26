@@ -1,0 +1,150 @@
+# Bright Agent — Fuzzing mode for Broken Crystals
+#
+# Coverage-guided, structure-aware fuzzing of this repo's input-handling code
+# (RUN_MODE=fuzzing). This is a SEPARATE, self-contained STAR run mode: it does
+# NOT start the app, open a Bright Repeater, run a cloud DAST scan, detect auth,
+# or run the scan -> fix -> validate loop. Instead it resolves a standalone
+# fuzzer binary, has an LLM write per-function Docker harnesses, fuzzes them,
+# triages the faults, and (optionally) fixes + re-validates them — all locally
+# on the runner, aside from a startup license check against BRIGHT_TOKEN.
+#
+# It hunts the bugs DAST can't: crashes, hangs, native memory-safety faults,
+# unrecoverable managed-runtime faults, and resource-amplification DoS — the
+# availability / process-integrity bugs that live PAST input validation, where
+# no signature exists. It deliberately ships NO SQLi/XSS/SSRF oracle; those stay
+# with the DAST workflow (bright-agent.yml). Run this ALONGSIDE that workflow as
+# an orthogonal, robustness-focused pass, not instead of it.
+#
+# Trigger: manual only.
+#
+#   • workflow_dispatch → manual run, launched by hand on a chosen branch.
+#
+# Runner prerequisites: Docker (every harness is built and fuzzed inside a
+# per-function Docker image), Git, curl, sha256sum (all on GitHub-hosted
+# `ubuntu-latest`). The prebuilt fuzzer is linux/x64 only.
+#
+# Required repository secrets:
+#     BRIGHT_TOKEN      Bright API token from https://app.brightsec.com
+#                       (used for the fuzzer's startup license check)
+#     INFERENCE_TOKEN   API token for your OpenAI-compatible inference endpoint
+#                       (the LLM picks fuzz targets and writes the harnesses)
+#   and one repository variable:
+#     INFERENCE_URL     that endpoint's base URL (OpenAI, GitHub Models, Ollama, …)
+#
+# Repo access uses the built-in GITHUB_TOKEN (see `permissions:`).
+
+name: Bright Agent (Fuzzing)
+
+on:
+  workflow_dispatch: {}
+
+# contents: write     → commit validated fixes onto the run branch
+# pull-requests: write → open/update the PR + summary comment
+# statuses: write     → set the "Bright Agent" commit status
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+
+# One run per ref (the branch the manual dispatch chose).
+concurrency:
+  group: bright-fuzzing-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bright-fuzzing:
+    runs-on: ubuntu-latest
+    env:
+      # Runner platform/arch for the Bright Agent binary:
+      # linux-x64 | linux-arm64 | darwin-x64 | darwin-arm64
+      ASSET: bright-agent-linux-x64
+    steps:
+      # Check out the chosen ref. Download the binary OUTSIDE this checkout so
+      # it's never swept into a fix commit.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Download & verify Bright Agent
+        working-directory: ${{ runner.temp }}
+        run: |
+          # Latest release. To pin a version, replace 'latest/download' with
+          # 'download/<tag>', e.g. .../releases/download/v0.1.1
+          base="https://github.com/BrightSec/bright-agent-dist/releases/latest/download"
+          curl -fsSL -o "${ASSET}" "${base}/${ASSET}"
+          curl -fsSL -o "${ASSET}.sha256" "${base}/${ASSET}.sha256"
+          sha256sum -c "${ASSET}.sha256"
+          chmod +x "${ASSET}"
+
+      - name: Show all available env variables
+        run: env | sort
+
+      - name: Run Bright Agent (fuzzing)
+        env:
+          # Run against the checked-out tree. REPOSITORY_URL is derived from the
+          # checkout's `origin` remote (set REPOSITORY_URL to override).
+          LOCAL_REPO_PATH: ${{ github.workspace }}
+          REPO_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # BRIGHT_TOKEN is the fuzzer's startup license check — the one network
+          # call fuzzing mode makes to Bright. No cloud scan, no Repeater.
+          BRIGHT_TOKEN: ${{ secrets.BRIGHT_TOKEN }}
+          # Inference endpoint: the LLM enumerates input-handling functions and
+          # writes/verifies the per-function harnesses.
+          INFERENCE_URL: ${{ vars.INFERENCE_URL }}
+          INFERENCE_TOKEN: ${{ secrets.INFERENCE_TOKEN }}
+
+          # --- Fuzzing mode ---
+          # Routes straight into the fuzzing pipeline: resolve the fuzzer binary,
+          # pick targets, build & verify Docker harnesses, fuzz, triage, and
+          # (unless FUZZER_FIX=0) fix + re-validate. Endpoint discovery, the
+          # cloud scan, auth detection, and the DAST fix loop never run. This
+          # mode ignores SCAN_SCOPE, auth, and the cloud scanner.
+          RUN_MODE: fuzzing
+          # FUZZER_* knobs take effect ONLY in this mode. Shown with their
+          # defaults — uncomment to override.
+          #
+          # FUZZER_BIN:         # explicit path to a `fuzzer` binary (else PATH, else download)
+          # FUZZER_VERSION: latest     # fuzzer release to download; must be >= 0.24.0
+          # FUZZER_MAX_TARGETS: "12"    # cap on total functions fuzzed in a run
+          # FUZZER_MAX_PER_FILE: "3"    # cap on near-duplicate sibling targets per file
+          # FUZZER_EPOCHS:             # override the adaptive per-function search budget
+          # FUZZER_TIMEOUT: "5"         # per-input hang timeout (s); exceeding it is a finding
+          # FUZZER_MAX_MEMORY:         # per-input peak-memory budget; exceeding it is a finding
+          # FUZZER_DEPTH: "1"           # multiplier that scales the execution budget
+          # FUZZER_FIX: "1"             # set to "0" for a find-and-report-only run (skip fixes)
+          #
+          # Tuning tip: breadth beats depth. To cover more input-handling
+          # surface, raise FUZZER_MAX_TARGETS before cranking FUZZER_DEPTH /
+          # FUZZER_EPOCHS.
+
+          # --- Detailed stats & diagnostics ---
+          BRIGHT_DEBUG: "1"
+          BRIGHT_DUMP_TURNS: "1"
+          BRIGHT_DUMP_DIR: ${{ runner.temp }}/bright-dumps
+          # Optional:
+          # AI_MODEL: gpt-5.4-mini
+        run: "${{ runner.temp }}/${{ env.ASSET }}"
+
+      # --- Artifact uploads (always run, even on failure) ---
+
+      - name: Upload Bright Agent logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bright-agent-fuzzing-logs
+          path: ~/.bright-agent/logs/
+          if-no-files-found: ignore
+
+      - name: Upload LLM turn dumps
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bright-agent-fuzzing-turn-dumps
+          path: ${{ runner.temp }}/bright-dumps/
+          if-no-files-found: ignore
+
+# NOTE: commits/PRs/comments made with GITHUB_TOKEN do not trigger your other
+# workflows (GitHub's anti-recursion rule). To have validated fix commits re-run
+# your repo's CI (check.yml / check-client.yml), use a PAT instead:
+#     REPO_ACCESS_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
