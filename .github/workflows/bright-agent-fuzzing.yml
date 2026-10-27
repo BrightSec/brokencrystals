@@ -89,6 +89,10 @@ jobs:
           # BRIGHT_TOKEN is the fuzzer's startup license check — the one network
           # call fuzzing mode makes to Bright. No cloud scan, no Repeater.
           BRIGHT_TOKEN: ${{ secrets.BRIGHT_TOKEN }}
+          # Bright cluster the license check validates the token against. Set as
+          # a repo variable (defaults to app.brightsec.com when unset); point it
+          # at the cluster that issued BRIGHT_TOKEN.
+          BRIGHT_HOSTNAME: ${{ vars.BRIGHT_HOSTNAME }}
           # Inference endpoint: the LLM enumerates input-handling functions and
           # writes/verifies the per-function harnesses.
           INFERENCE_URL: ${{ vars.INFERENCE_URL }}
