@@ -33,6 +33,8 @@ services:
       CHAT_API_MODEL: ${CHAT_API_MODEL}
       CHAT_API_TOKEN: ${CHAT_API_TOKEN}
       CHAT_API_MAX_TOKENS: ${CHAT_API_MAX_TOKENS}
+      ORCAROUTER_API_KEY: ${ORCAROUTER_API_KEY}
+      ORCA_API_BASE_URL: ${ORCA_API_BASE_URL}
     deploy:
       restart_policy:
         condition: on-failure

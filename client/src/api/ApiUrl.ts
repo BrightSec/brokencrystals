@@ -14,5 +14,6 @@ export enum ApiUrl {
   Partners = '/api/partners',
   Email = '/api/email',
   Chat = '/api/chat',
+  OrcaRouter = '/api/orcarouter',
   HiddenUpload = '/api/hidden-upload'
 }

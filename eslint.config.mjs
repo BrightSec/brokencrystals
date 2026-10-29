@@ -16,5 +16,15 @@ export default tseslint.config(
         }
       ]
     }
+  },
+  {
+    // Standalone Node ESM helpers used to capture UI evidence.
+    files: ['tools/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly'
+      }
+    }
   }
 );

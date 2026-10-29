@@ -2,6 +2,7 @@
 /dist
 /client/build
 /node_modules
+/orca-evidence
 
 # Logs
 logs

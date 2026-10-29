@@ -19,6 +19,7 @@ import { AppResolver } from './app.resolver';
 import { PartnersModule } from './partners/partners.module';
 import { EmailModule } from './email/email.module';
 import { ChatModule } from './chat/chat.module';
+import { OrcaRouterModule } from './orcarouter/orcarouter.module';
 import { SafeFilesModule } from './safe-files/safe-files.module';
 import { McpModule } from './mcp/mcp.module';
 
@@ -43,6 +44,7 @@ import { McpModule } from './mcp/mcp.module';
     PartnersModule,
     EmailModule,
     ChatModule,
+    OrcaRouterModule,
     SafeFilesModule,
     McpModule
   ],
